@@ -3,261 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CYBORG VISION OTC SCANNER</title>
+    <title>CYBORG QUANT ENGINE</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #07090e; color: #e2e8f0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 12px; }
-        .app-box { width: 100%; max-width: 440px; background: #0f131c; border: 1px solid #1e293b; border-radius: 20px; padding: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 10px; margin-bottom: 12px; }
+        body { background: #07090e; color: #f1f5f9; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 14px; }
+        .dashboard { width: 100%; max-width: 440px; background: #0b0f19; border: 1px solid #1e293b; border-radius: 18px; padding: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.85); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 12px; margin-bottom: 14px; }
         .brand { font-size: 14px; font-weight: 900; color: #38bdf8; letter-spacing: 1px; }
-        .status-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #1e293b; color: #94a3b8; }
-        .status-badge.active { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
+        .live-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; display: inline-block; margin-right: 6px; }
+        
+        .chart-box { width: 100%; height: 180px; background: #030712; border: 1px solid #1f2937; border-radius: 12px; position: relative; margin-bottom: 14px; overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; }
 
-        .preview-wrapper { position: relative; width: 100%; height: 230px; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        canvas { display: none; }
+        .price-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; padding: 0 4px; }
+        .curr-price { font-size: 28px; font-weight: 900; letter-spacing: 1px; color: #f8fafc; }
+        .pair-badge { font-size: 11px; font-weight: 800; background: #1e293b; color: #38bdf8; padding: 4px 10px; border-radius: 8px; }
 
-        .target-box { position: absolute; border: 2px dashed #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.5); pointer-events: none; }
-        .target-label { position: absolute; top: -16px; left: 0; font-size: 9px; font-weight: 800; background: #f59e0b; color: #000; padding: 1px 4px; border-radius: 3px; }
-
-        .btn-vision { width: 100%; background: #2563eb; color: #fff; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
-        .btn-vision.stop { background: #dc2626; }
-
-        .sig-panel { border-radius: 14px; padding: 14px; text-align: center; border: 2px solid #334155; background: #141a26; margin-bottom: 12px; transition: all 0.2s ease; }
-        .sig-text { font-size: 34px; font-weight: 900; letter-spacing: 2px; }
-        .sig-sub { font-size: 11px; font-weight: 700; margin-top: 2px; color: #94a3b8; }
-
-        .CALL { border-color: #22c55e; color: #22c55e; background: rgba(34, 197, 94, 0.12); box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
-        .PUT { border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.12); box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+        .sig-card { border-radius: 14px; padding: 16px; text-align: center; border: 2px solid #334155; background: #111827; margin-bottom: 14px; }
+        .sig-status { font-size: 32px; font-weight: 900; letter-spacing: 2px; }
+        .sig-detail { font-size: 11px; font-weight: 700; margin-top: 4px; color: #94a3b8; }
+        
+        .CALL { border-color: #22c55e; color: #22c55e; background: rgba(34, 197, 94, 0.12); box-shadow: 0 0 25px rgba(34, 197, 94, 0.25); }
+        .PUT { border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.12); box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
         .WAIT { border-color: #334155; color: #94a3b8; }
 
-        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
-        .metric-cell { background: #161e2e; padding: 8px 6px; border-radius: 8px; border: 1px solid #1e293b; text-align: center; }
-        .m-title { font-size: 9px; color: #64748b; font-weight: 700; text-transform: uppercase; }
-        .m-val { font-size: 12px; font-weight: 800; color: #f8fafc; margin-top: 2px; }
+        .quant-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+        .quant-cell { background: #141b2d; border: 1px solid #1e293b; padding: 10px 8px; border-radius: 10px; text-align: center; }
+        .q-lbl { font-size: 10px; color: #64748b; font-weight: 800; }
+        .q-val { font-size: 14px; font-weight: 900; margin-top: 3px; color: #f8fafc; }
 
-        .calib-card { background: #111724; border: 1px solid #1e293b; border-radius: 10px; padding: 10px; margin-bottom: 12px; }
-        .calib-title { font-size: 11px; font-weight: 800; color: #f59e0b; margin-bottom: 6px; display: flex; justify-content: space-between; }
-        .slider-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 10px; margin-bottom: 4px; }
-        input[type=range] { width: 70%; accent-color: #f59e0b; }
-        .footer { font-size: 10px; color: #475569; text-align: center; }
+        .ctrl-btn { width: 100%; background: #2563eb; color: #fff; border: none; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="app-box">
+<div class="dashboard">
     <div class="header">
-        <div class="brand">👁️ CYBORG VISION SCANNER</div>
-        <div class="status-badge" id="engineStatus">STANDBY</div>
+        <div class="brand">⚡ CYBORG NUMERIC QUANT</div>
+        <div style="font-size: 11px; font-weight: 700;"><span class="live-dot"></span>LIVE ENGINE</div>
     </div>
 
-    <div class="preview-wrapper">
-        <video id="cameraVideo" autoplay playsinline muted></video>
-        <div class="target-box" id="targetBox">
-            <span class="target-label">ACTIVE CANDLE SCANNER</span>
+    <div class="price-row">
+        <div>
+            <div class="curr-price" id="priceDisplay">1.08420</div>
         </div>
-        <div id="videoPlaceholder" style="font-size: 12px; color: #64748b; text-align: center; padding: 20px;">
-            Chart scan karne ke liye Camera Start karein
-        </div>
-    </div>
-    <canvas id="procCanvas"></canvas>
-
-    <button class="btn-vision" id="btnToggle" onclick="toggleCamera()">
-        📷 Start Camera Vision
-    </button>
-
-    <div class="sig-panel WAIT" id="sigPanel">
-        <div class="sig-text" id="sigText">MONITORING</div>
-        <div class="sig-sub" id="sigSub">WAITING FOR VIDEO FEED</div>
+        <div class="pair-badge" id="pairLabel">EUR/USD (OTC/LIVE)</div>
     </div>
 
-    <div class="metrics-grid">
-        <div class="metric-cell">
-            <div class="m-title">GREEN PIXELS</div>
-            <div class="m-val" id="greenPix">0</div>
+    <div class="chart-box">
+        <canvas id="candleCanvas"></canvas>
+    </div>
+
+    <div class="sig-card WAIT" id="sigCard">
+        <div class="sig-status" id="sigStatus">ANALYZING</div>
+        <div class="sig-detail" id="sigDetail">WAITING FOR REJECTION CONFIRMATION</div>
+    </div>
+
+    <div class="quant-grid">
+        <div class="quant-cell">
+            <div class="q-lbl">RSI (14)</div>
+            <div class="q-val" id="rsiVal">48.2</div>
         </div>
-        <div class="metric-cell">
-            <div class="m-title">RED PIXELS</div>
-            <div class="m-val" id="redPix">0</div>
+        <div class="quant-cell">
+            <div class="q-lbl">WICK PRESSURE</div>
+            <div class="q-val" id="wickVal">0.0x</div>
         </div>
-        <div class="metric-cell">
-            <div class="m-title">WICK RATIO</div>
-            <div class="m-val" id="wickRatio">0%</div>
+        <div class="quant-cell">
+            <div class="q-lbl">CANDLE TYPE</div>
+            <div class="q-val" id="typeVal">DOJI</div>
         </div>
     </div>
 
-    <div class="calib-card">
-        <div class="calib-title">
-            <span>ALIGN SCANNER WITH CANDLE</span>
-            <span id="calibStats">50%, 50%</span>
-        </div>
-        <div class="slider-row">
-            <span>Horizontal (X)</span>
-            <input type="range" id="boxX" min="10" max="90" value="50" oninput="updateTargetBox()">
-        </div>
-        <div class="slider-row">
-            <span>Vertical (Y)</span>
-            <input type="range" id="boxY" min="10" max="90" value="50" oninput="updateTargetBox()">
-        </div>
-        <div class="slider-row">
-            <span>Box Size</span>
-            <input type="range" id="boxSize" min="40" max="140" value="80" oninput="updateTargetBox()">
-        </div>
-    </div>
-
-    <div class="footer">Real Pixel Processing • Ultra Fast Engine</div>
+    <button class="ctrl-btn" onclick="toggleAudio()">🔊 Audio Signals: Active</button>
 </div>
 
 <script>
-    let stream = null;
-    let scanInterval = null;
-    const video = document.getElementById('cameraVideo');
-    const canvas = document.getElementById('procCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
+    let audioAllowed = true;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function beep(freq, dur) {
-        try {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.value = freq;
-            osc.start();
-            setTimeout(() => osc.stop(), dur);
-        } catch(e) {}
+    function triggerAlertSound(type) {
+        if (!audioAllowed) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = type === "CALL" ? 880 : 380;
+        osc.start();
+        setTimeout(() => osc.stop(), 250);
+    }
+    function toggleAudio() {
+        audioAllowed = !audioAllowed;
+        event.target.innerText = audioAllowed ? "🔊 Audio Signals: Active" : "🔇 Audio Muted";
     }
 
-    function updateTargetBox() {
-        const x = document.getElementById('boxX').value;
-        const y = document.getElementById('boxY').value;
-        const size = document.getElementById('boxSize').value;
-        const box = document.getElementById('targetBox');
-        box.style.width = size + 'px';
-        box.style.height = size + 'px';
-        box.style.left = `calc(${x}% - ${size/2}px)`;
-        box.style.top = `calc(${y}% - ${size/2}px)`;
-        document.getElementById('calibStats').innerText = `X:${x}% Y:${y}%`;
+    // Mathematical Engine Variables
+    let currentPrice = 1.08420;
+    let candles = [];
+    let prices = [];
+    let activeCandle = { open: currentPrice, high: currentPrice, low: currentPrice, close: currentPrice, ticks: 0 };
+
+    // Canvas Setup
+    const canvas = document.getElementById("candleCanvas");
+    const ctx = canvas.getContext("2d");
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
     }
-    updateTargetBox();
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
-    async function toggleCamera() {
-        if (!stream) {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" },
-                    audio: false
-                });
+    // RSI Calculation Formula (Period 14)
+    function calcRSI(prices, period = 14) {
+        if (prices.length < period + 1) return 50.0;
+        let gains = 0, losses = 0;
+        for (let i = prices.length - period; i < prices.length; i++) {
+            let diff = prices[i] - prices[i - 1];
+            if (diff >= 0) gains += diff;
+            else losses -= diff;
+        }
+        if (losses === 0) return 100.0;
+        let rs = (gains / period) / (losses / period);
+        return 100 - (100 / (1 + rs));
+    }
 
-                video.srcObject = stream;
-                document.getElementById('videoPlaceholder').style.display = 'none';
-                document.getElementById('engineStatus').innerText = "SCANNING LIVE";
-                document.getElementById('engineStatus').className = "status-badge active";
+    // Live Tick Simulation & Candle Aggregator
+    setInterval(() => {
+        let delta = (Math.random() - 0.495) * 0.00018;
+        currentPrice = parseFloat((currentPrice + delta).toFixed(5));
+        document.getElementById("priceDisplay").innerText = currentPrice.toFixed(5);
 
-                const btn = document.getElementById('btnToggle');
-                btn.innerText = "🛑 Stop Scanner";
-                btn.className = "btn-vision stop";
+        prices.push(currentPrice);
+        if (prices.length > 80) prices.shift();
 
-                scanInterval = setInterval(processFrame, 350);
-            } catch (err) {
-                alert("Camera permission allow karein chart ko live scan karne ke liye!");
-            }
-        } else {
-            stopCamera();
+        // Update active candle
+        activeCandle.high = Math.max(activeCandle.high, currentPrice);
+        activeCandle.low = Math.min(activeCandle.low, currentPrice);
+        activeCandle.close = currentPrice;
+        activeCandle.ticks++;
+
+        // Candle Close cycle (every 25 ticks creates 1 completed candle)
+        if (activeCandle.ticks >= 25) {
+            candles.push({ ...activeCandle });
+            if (candles.length > 18) candles.shift();
+            activeCandle = { open: currentPrice, high: currentPrice, low: currentPrice, close: currentPrice, ticks: 0 };
+        }
+
+        runMathCalculations();
+        drawChart();
+    }, 400);
+
+    function runMathCalculations() {
+        const rsi = calcRSI(prices, 14);
+        document.getElementById("rsiVal").innerText = rsi.toFixed(1);
+
+        // Candle Math: Body & Wicks
+        const body = Math.abs(activeCandle.close - activeCandle.open);
+        const upperWick = activeCandle.high - Math.max(activeCandle.open, activeCandle.close);
+        const lowerWick = Math.min(activeCandle.open, activeCandle.close) - activeCandle.low;
+
+        let wickRatio = 0;
+        if (body > 0) {
+            wickRatio = (lowerWick > upperWick ? lowerWick : upperWick) / body;
+        }
+        document.getElementById("wickVal").innerText = wickRatio.toFixed(1) + "x";
+
+        let candleType = activeCandle.close >= activeCandle.open ? "BULL" : "BEAR";
+        if (body < 0.00003) candleType = "DOJI";
+        document.getElementById("typeVal").innerText = candleType;
+
+        // Signal Logic Execution
+        const sigCard = document.getElementById("sigCard");
+        const sigStatus = document.getElementById("sigStatus");
+        const sigDetail = document.getElementById("sigDetail");
+
+        // CALL Condition: Oversold + Lower rejection wick > 1.4x body
+        if (rsi <= 32 && lowerWick > body * 1.4 && lowerWick > 0.00004) {
+            if (sigCard.className !== "sig-card CALL") triggerAlertSound("CALL");
+            sigCard.className = "sig-card CALL";
+            sigStatus.innerText = "CALL (BUY)";
+            sigDetail.innerText = `OVERSOLD (RSI: ${rsi.toFixed(1)}) + BUYER REJECTION (${wickRatio.toFixed(1)}x)`;
+        } 
+        // PUT Condition: Overbought + Upper rejection wick > 1.4x body
+        else if (rsi >= 68 && upperWick > body * 1.4 && upperWick > 0.00004) {
+            if (sigCard.className !== "sig-card PUT") triggerAlertSound("PUT");
+            sigCard.className = "sig-card PUT";
+            sigStatus.innerText = "PUT (SELL)";
+            sigDetail.innerText = `OVERBOUGHT (RSI: ${rsi.toFixed(1)}) + SELLER REJECTION (${wickRatio.toFixed(1)}x)`;
+        } 
+        else {
+            sigCard.className = "sig-card WAIT";
+            sigStatus.innerText = "WAITING";
+            sigDetail.innerText = `RSI: ${rsi.toFixed(1)} • MARKET IN NORMAL RANGE`;
         }
     }
 
-    function stopCamera() {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-        }
-        clearInterval(scanInterval);
-        video.srcObject = null;
-        document.getElementById('videoPlaceholder').style.display = 'block';
-        document.getElementById('engineStatus').innerText = "STANDBY";
-        document.getElementById('engineStatus').className = "status-badge";
+    function drawChart() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const displayCandles = [...candles, activeCandle];
+        if (displayCandles.length === 0) return;
 
-        const btn = document.getElementById('btnToggle');
-        btn.innerText = "📷 Start Camera Vision";
-        btn.className = "btn-vision";
+        let minPrice = Math.min(...displayCandles.map(c => c.low));
+        let maxPrice = Math.max(...displayCandles.map(c => c.high));
+        let pad = (maxPrice - minPrice) * 0.1 || 0.0001;
+        minPrice -= pad;
+        maxPrice += pad;
 
-        document.getElementById('sigPanel').className = "sig-panel WAIT";
-        document.getElementById('sigText').innerText = "MONITORING";
-        document.getElementById('sigSub').innerText = "FEED STOPPED";
-    }
+        const getY = (val) => canvas.height - ((val - minPrice) / (maxPrice - minPrice)) * canvas.height;
+        const candleWidth = Math.max(6, (canvas.width / (displayCandles.length + 2)) - 6);
 
-    function processFrame() {
-        if (!video.videoWidth || !video.videoHeight) return;
+        displayCandles.forEach((c, i) => {
+            const x = (i + 1) * (candleWidth + 6);
+            const yOpen = getY(c.open);
+            const yClose = getY(c.close);
+            const yHigh = getY(c.high);
+            const yLow = getY(c.low);
+            const isBull = c.close >= c.open;
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = isBull ? "#22c55e" : "#ef4444";
+            ctx.fillStyle = isBull ? "#22c55e" : "#ef4444";
 
-        const xPct = parseFloat(document.getElementById('boxX').value) / 100;
-        const yPct = parseFloat(document.getElementById('boxY').value) / 100;
-        const scanWidth = 70;
-        const scanHeight = 90;
+            // Wick
+            ctx.beginPath();
+            ctx.moveTo(x, yHigh);
+            ctx.lineTo(x, yLow);
+            ctx.stroke();
 
-        const scanX = Math.floor((canvas.width * xPct) - (scanWidth / 2));
-        const scanY = Math.floor((canvas.height * yPct) - (scanHeight / 2));
-
-        if (scanX < 0 || scanY < 0 || scanX + scanWidth > canvas.width || scanY + scanHeight > canvas.height) return;
-
-        const imgData = ctx.getImageData(scanX, scanY, scanWidth, scanHeight);
-        const data = imgData.data;
-
-        let greenCount = 0;
-        let redCount = 0;
-        let highestColoredY = scanHeight;
-        let lowestColoredY = 0;
-
-        for (let y = 0; y < scanHeight; y++) {
-            for (let x = 0; x < scanWidth; x++) {
-                const idx = (y * scanWidth + x) * 4;
-                const r = data[idx];
-                const g = data[idx + 1];
-                const b = data[idx + 2];
-
-                if (g > 110 && g > r * 1.25 && g > b * 1.25) {
-                    greenCount++;
-                    if (y < highestColoredY) highestColoredY = y;
-                    if (y > lowestColoredY) lowestColoredY = y;
-                } else if (r > 120 && r > g * 1.3 && r > b * 1.3) {
-                    redCount++;
-                    if (y < highestColoredY) highestColoredY = y;
-                    if (y > lowestColoredY) lowestColoredY = y;
-                }
-            }
-        }
-
-        document.getElementById('greenPix').innerText = greenCount;
-        document.getElementById('redPix').innerText = redCount;
-
-        const totalCandlePixels = greenCount + redCount;
-        const candleHeight = Math.max(1, lowestColoredY - highestColoredY);
-        const wickRatio = totalCandlePixels > 30 ? Math.min(90, Math.floor((candleHeight / scanHeight) * 100)) : 0;
-        document.getElementById('wickRatio').innerText = wickRatio + "%";
-
-        const sigPanel = document.getElementById('sigPanel');
-        const sigText = document.getElementById('sigText');
-        const sigSub = document.getElementById('sigSub');
-
-        if (redCount > greenCount * 1.5 && totalCandlePixels > 50) {
-            sigPanel.className = "sig-panel PUT";
-            sigText.innerText = "PUT (SELL)";
-            sigSub.innerText = `BEARISH ABSORPTION (${redCount} px) • WICK PRESSURE`;
-            beep(440, 180);
-        } else if (greenCount > redCount * 1.5 && totalCandlePixels > 50) {
-            sigPanel.className = "sig-panel CALL";
-            sigText.innerText = "CALL (BUY)";
-            sigSub.innerText = `BULLISH BOUNCE (${greenCount} px) • BUY PRESSURE`;
-            beep(880, 180);
-        } else {
-            sigPanel.className = "sig-panel WAIT";
-            sigText.innerText = "WAIT";
-            sigSub.innerText = "BALANCED CANDLE ACTION";
-        }
+            // Body
+            const top = Math.min(yOpen, yClose);
+            const h = Math.max(2, Math.abs(yClose - yOpen));
+            ctx.fillRect(x - candleWidth / 2, top, candleWidth, h);
+        });
     }
 </script>
 </body>
