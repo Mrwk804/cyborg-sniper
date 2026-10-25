@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Java 17
@@ -23,12 +23,11 @@ jobs:
         with:
           gradle-version: '8.4'
 
-      - name: Scaffold Native Android App
+      - name: Generate Android App Code
         run: |
           mkdir -p app/src/main/java/com/cyborg/sniper
           mkdir -p app/src/main/res/values
 
-          # 1. settings.gradle
           cat << 'EOF' > settings.gradle
           pluginManagement {
               repositories {
@@ -48,14 +47,12 @@ jobs:
           include ':app'
           EOF
 
-          # 2. Root build.gradle
           cat << 'EOF' > build.gradle
           plugins {
               id 'com.android.application' version '8.2.2' apply false
           }
           EOF
 
-          # 3. app/build.gradle
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -82,11 +79,9 @@ jobs:
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
 
-          # 4. AndroidManifest.xml
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -94,8 +89,6 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
               <uses-permission android:name="android.permission.VIBRATE" />
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
               <application
                   android:label="Cyborg Sniper"
                   android:theme="@style/Theme.AppCompat.NoActionBar">
@@ -115,17 +108,14 @@ jobs:
           </manifest>
           EOF
 
-          # 5. Strings & Styles
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
               <string name="app_name">Cyborg Sniper</string>
           </resources>
           EOF
 
-          # 6. MainActivity.java
           cat << 'EOF' > app/src/main/java/com/cyborg/sniper/MainActivity.java
           package com.cyborg.sniper;
-
           import android.app.Activity;
           import android.content.Intent;
           import android.media.projection.MediaProjectionManager;
@@ -141,321 +131,250 @@ jobs:
 
           public class MainActivity extends Activity {
               private static final int REQ_OVERLAY = 1001;
-              private static final int REQ_PROJECTION = 1002;
+              private static final int REQ_PROJ = 1002;
               private MediaProjectionManager mpm;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   mpm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+                  LinearLayout l = new LinearLayout(this);
+                  l.setOrientation(LinearLayout.VERTICAL);
+                  l.setBackgroundColor(0xFF090D16);
+                  l.setGravity(Gravity.CENTER);
+                  l.setPadding(30, 30, 30, 30);
 
-                  LinearLayout layout = new LinearLayout(this);
-                  layout.setOrientation(LinearLayout.VERTICAL);
-                  layout.setBackgroundColor(0xFF07090E);
-                  layout.setGravity(Gravity.CENTER);
-                  layout.setPadding(40, 40, 40, 40);
+                  TextView tv = new TextView(this);
+                  tv.setText("⚡ CYBORG SNIPER OTC");
+                  tv.setTextColor(0xFF00F0FF);
+                  tv.setTextSize(20);
+                  tv.setGravity(Gravity.CENTER);
+                  l.addView(tv);
 
-                  TextView title = new TextView(this);
-                  title.setText("⚡ CYBORG OTC SNIPER");
-                  title.setTextColor(0xFF00F0FF);
-                  title.setTextSize(20);
-                  title.setGravity(Gravity.CENTER);
-                  layout.addView(title);
-
-                  TextView desc = new TextView(this);
-                  desc.setText("Real-Time Native Screen Pixel Scanner for Quotex / Pocket Option\n");
-                  desc.setTextColor(0xFF94A3B8);
-                  desc.setTextSize(12);
-                  desc.setGravity(Gravity.CENTER);
-                  layout.addView(desc);
-
-                  Button btnStart = new Button(this);
-                  btnStart.setText("START FLOATING SCANNER");
-                  btnStart.setBackgroundColor(0xFF0284C7);
-                  btnStart.setTextColor(0xFFFFFFFF);
-                  btnStart.setPadding(20, 20, 20, 20);
-                  btnStart.setOnClickListener(v -> checkAndStart());
-                  layout.addView(btnStart);
-
-                  setContentView(layout);
-              }
-
-              private void checkAndStart() {
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-                      Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                              Uri.parse("package:" + getPackageName()));
-                      startActivityForResult(intent, REQ_OVERLAY);
-                  } else {
-                      startActivityForResult(mpm.createScreenCaptureIntent(), REQ_PROJECTION);
-                  }
+                  Button b = new Button(this);
+                  b.setText("START OVERLAY SCANNER");
+                  b.setBackgroundColor(0xFF0284C7);
+                  b.setTextColor(0xFFFFFFFF);
+                  b.setOnClickListener(v -> {
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                          startActivityForResult(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())), REQ_OVERLAY);
+                      } else {
+                          startActivityForResult(mpm.createScreenCaptureIntent(), REQ_PROJ);
+                      }
+                  });
+                  l.addView(b);
+                  setContentView(l);
               }
 
               @Override
-              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-                  if (requestCode == REQ_OVERLAY) {
+              protected void onActivityResult(int req, int res, Intent data) {
+                  if (req == REQ_OVERLAY) {
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                          startActivityForResult(mpm.createScreenCaptureIntent(), REQ_PROJECTION);
-                      } else {
-                          Toast.makeText(this, "Overlay permission zaroori hai!", Toast.LENGTH_SHORT).show();
+                          startActivityForResult(mpm.createScreenCaptureIntent(), REQ_PROJ);
                       }
-                  } else if (requestCode == REQ_PROJECTION) {
-                      if (resultCode == RESULT_OK && data != null) {
-                          Intent svc = new Intent(this, CyborgService.class);
-                          svc.putExtra("resultCode", resultCode);
-                          svc.putExtra("data", data);
-                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                              startForegroundService(svc);
-                          } else {
-                              startService(svc);
-                          }
-                          finish();
-                      } else {
-                          Toast.makeText(this, "Screen capture allow karna hoga!", Toast.LENGTH_SHORT).show();
-                      }
+                  } else if (req == REQ_PROJ && res == RESULT_OK && data != null) {
+                      Intent i = new Intent(this, CyborgService.class);
+                      i.putExtra("code", res);
+                      i.putExtra("data", data);
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(i);
+                      else startService(i);
+                      finish();
                   }
               }
           }
           EOF
 
-          # 7. CyborgService.java (Floating Scanner + Native Screen Reader)
           cat << 'EOF' > app/src/main/java/com/cyborg/sniper/CyborgService.java
           package com.cyborg.sniper;
-
-          import android.app.Notification;
-          import android.app.NotificationChannel;
-          import android.app.NotificationManager;
-          import android.app.Service;
-          import android.content.Context;
-          import android.content.Intent;
+          import android.app.*;
+          import android.content.*;
           import android.content.pm.ServiceInfo;
-          import android.graphics.Color;
-          import android.graphics.PixelFormat;
+          import android.graphics.*;
           import android.graphics.drawable.GradientDrawable;
-          import android.hardware.display.DisplayManager;
-          import android.hardware.display.VirtualDisplay;
-          import android.media.AudioManager;
-          import android.media.Image;
-          import android.media.ImageReader;
-          import android.media.ToneGenerator;
-          import android.media.projection.MediaProjection;
-          import android.media.projection.MediaProjectionManager;
-          import android.os.Build;
-          import android.os.Handler;
-          import android.os.IBinder;
-          import android.os.Looper;
-          import android.os.Vibrator;
+          import android.hardware.display.*;
+          import android.media.*;
+          import android.media.projection.*;
+          import android.os.*;
           import android.util.DisplayMetrics;
-          import android.view.Gravity;
-          import android.view.MotionEvent;
-          import android.view.View;
-          import android.view.WindowManager;
-          import android.widget.Button;
-          import android.widget.FrameLayout;
-          import android.widget.LinearLayout;
-          import android.widget.TextView;
+          import android.view.*;
+          import android.widget.*;
           import java.nio.ByteBuffer;
 
           public class CyborgService extends Service {
               private WindowManager wm;
-              private FrameLayout targetBox;
-              private LinearLayout hudView;
+              private View targetBox;
+              private LinearLayout hud;
               private WindowManager.LayoutParams boxParams, hudParams;
+              private MediaProjection proj;
+              private VirtualDisplay vd;
+              private ImageReader reader;
+              private Handler h;
+              private Runnable loop;
+              private TextView tvSig;
+              private Vibrator vib;
+              private ToneGenerator tone;
+              private long lastAlert = 0;
 
-              private MediaProjection projection;
-              private VirtualDisplay vDisplay;
-              private ImageReader imgReader;
-              private Handler scanHandler;
-              private Runnable scanRunnable;
+              @Override public IBinder onBind(Intent i) { return null; }
 
-              private TextView tvSignal, tvDetails;
-              private ToneGenerator toneGen;
-              private Vibrator vibrator;
-              private long lastAlertTime = 0;
-
-              @Override
-              public IBinder onBind(Intent intent) { return null; }
-
-              @Override
-              public void onCreate() {
+              @Override public void onCreate() {
                   super.onCreate();
                   wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-                  toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
-                  vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-                  initNotification();
-                  createOverlayViews();
-              }
+                  vib = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                  tone = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
 
-              private void initNotification() {
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      NotificationChannel ch = new NotificationChannel("cyborg_svc", "Cyborg Scanner", NotificationManager.IMPORTANCE_LOW);
-                      NotificationManager nm = getSystemService(NotificationManager.class);
-                      if (nm != null) nm.createNotificationChannel(ch);
-
-                      Notification n = new Notification.Builder(this, "cyborg_svc")
-                              .setContentTitle("Cyborg Vision Active")
-                              .setContentText("Scanning chart pixels...")
-                              .setSmallIcon(android.R.drawable.ic_menu_camera)
-                              .build();
-
+                      NotificationChannel c = new NotificationChannel("c_bot", "Scanner", NotificationManager.IMPORTANCE_LOW);
+                      ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(c);
+                      Notification n = new Notification.Builder(this, "c_bot").setContentTitle("Cyborg Active").setSmallIcon(android.R.drawable.ic_menu_camera).build();
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                          startForeground(201, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+                          startForeground(101, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
                       } else {
-                          startForeground(201, n);
+                          startForeground(101, n);
                       }
                   }
-              }
 
-              private void createOverlayViews() {
-                  int overlayType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
-                          WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY :
-                          WindowManager.LayoutParams.TYPE_PHONE;
+                  int type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
 
-                  // 1. Draggable Target Box (Over the Candle)
-                  targetBox = new FrameLayout(this);
-                  GradientDrawable boxBg = new GradientDrawable();
-                  boxBg.setColor(Color.TRANSPARENT);
-                  boxBg.setStroke(4, 0xFF00F0FF, 10, 8);
-                  targetBox.setBackground(boxBg);
+                  targetBox = new View(this);
+                  GradientDrawable g = new GradientDrawable();
+                  g.setColor(0x00000000);
+                  g.setStroke(3, 0xFF00F0FF);
+                  targetBox.setBackground(g);
 
-                  boxParams = new WindowManager.LayoutParams(
-                          140, 220,
-                          overlayType,
-                          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                          PixelFormat.TRANSLUCENT
-                  );
+                  boxParams = new WindowManager.LayoutParams(120, 180, type, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, PixelFormat.TRANSLUCENT);
                   boxParams.gravity = Gravity.TOP | Gravity.LEFT;
-                  boxParams.x = 450;
-                  boxParams.y = 700;
+                  boxParams.x = 400; boxParams.y = 600;
                   wm.addView(targetBox, boxParams);
-                  setupTouchDrag(targetBox, boxParams);
+                  drag(targetBox, boxParams);
 
-                  // 2. Draggable Neon HUD Panel
-                  hudView = new LinearLayout(this);
-                  hudView.setOrientation(LinearLayout.VERTICAL);
-                  hudView.setPadding(20, 16, 20, 16);
-                  GradientDrawable hudBg = new GradientDrawable();
-                  hudBg.setColor(0xEE090D16);
-                  hudBg.setCornerRadius(16);
-                  hudBg.setStroke(2, 0xFF1E293B);
-                  hudView.setBackground(hudBg);
+                  hud = new LinearLayout(this);
+                  hud.setOrientation(LinearLayout.VERTICAL);
+                  hud.setPadding(16, 12, 16, 12);
+                  GradientDrawable hg = new GradientDrawable();
+                  hg.setColor(0xEE090D16);
+                  hg.setCornerRadius(12);
+                  hud.setBackground(hg);
 
-                  TextView tvHeader = new TextView(this);
-                  tvHeader.setText("⚡ CYBORG HUD");
-                  tvHeader.setTextColor(0xFF00F0FF);
-                  tvHeader.setTextSize(11);
-                  hudView.addView(tvHeader);
+                  tvSig = new TextView(this);
+                  tvSig.setText("SCANNING...");
+                  tvSig.setTextColor(0xFF00F0FF);
+                  tvSig.setTextSize(16);
+                  hud.addView(tvSig);
 
-                  tvSignal = new TextView(this);
-                  tvSignal.setText("MONITORING");
-                  tvSignal.setTextColor(0xFF94A3B8);
-                  tvSignal.setTextSize(18);
-                  tvSignal.setPadding(0, 6, 0, 4);
-                  hudView.addView(tvSignal);
+                  Button exit = new Button(this);
+                  exit.setText("CLOSE");
+                  exit.setTextSize(10);
+                  exit.setOnClickListener(v -> stopSelf());
+                  hud.addView(exit);
 
-                  tvDetails = new TextView(this);
-                  tvDetails.setText("Place target box on candle");
-                  tvDetails.setTextColor(0xFF64748B);
-                  tvDetails.setTextSize(9);
-                  hudView.addView(tvDetails);
-
-                  Button btnClose = new Button(this);
-                  btnClose.setText("EXIT");
-                  btnClose.setTextSize(10);
-                  btnClose.setBackgroundColor(0xFF7F1D1D);
-                  btnClose.setTextColor(Color.WHITE);
-                  btnClose.setOnClickListener(v -> stopSelf());
-                  hudView.addView(btnClose);
-
-                  hudParams = new WindowManager.LayoutParams(
-                          360, WindowManager.LayoutParams.WRAP_CONTENT,
-                          overlayType,
-                          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                          PixelFormat.TRANSLUCENT
-                  );
+                  hudParams = new WindowManager.LayoutParams(260, WindowManager.LayoutParams.WRAP_CONTENT, type, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
                   hudParams.gravity = Gravity.TOP | Gravity.LEFT;
-                  hudParams.x = 40;
-                  hudParams.y = 120;
-                  wm.addView(hudView, hudParams);
-                  setupTouchDrag(hudView, hudParams);
+                  hudParams.x = 30; hudParams.y = 80;
+                  wm.addView(hud, hudParams);
+                  drag(hud, hudParams);
               }
 
-              private void setupTouchDrag(View view, WindowManager.LayoutParams params) {
-                  view.setOnTouchListener(new View.OnTouchListener() {
-                      private int initX, initY;
-                      private float touchX, touchY;
-                      @Override
-                      public boolean onTouch(View v, MotionEvent e) {
+              private void drag(View v, WindowManager.LayoutParams p) {
+                  v.setOnTouchListener(new View.OnTouchListener() {
+                      int ix, iy; float tx, ty;
+                      @Override public boolean onTouch(View view, MotionEvent e) {
                           switch (e.getAction()) {
-                              case MotionEvent.ACTION_DOWN:
-                                  initX = params.x; initY = params.y;
-                                  touchX = e.getRawX(); touchY = e.getRawY();
-                                  return true;
-                              case MotionEvent.ACTION_MOVE:
-                                  params.x = initX + (int)(e.getRawX() - touchX);
-                                  params.y = initY + (int)(e.getRawY() - touchY);
-                                  wm.updateViewLayout(view, params);
-                                  return true;
+                              case MotionEvent.ACTION_DOWN: ix = p.x; iy = p.y; tx = e.getRawX(); ty = e.getRawY(); return true;
+                              case MotionEvent.ACTION_MOVE: p.x = ix + (int)(e.getRawX() - tx); p.y = iy + (int)(e.getRawY() - ty); wm.updateViewLayout(v, p); return true;
                           }
                           return false;
                       }
                   });
               }
 
-              @Override
-              public int onStartCommand(Intent intent, int flags, int startId) {
-                  if (intent != null && projection == null) {
-                      int resultCode = intent.getIntExtra("resultCode", 0);
-                      Intent data = intent.getParcelableExtra("data");
-                      MediaProjectionManager mpm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-                      projection = mpm.getMediaProjection(resultCode, data);
-                      startScreenCapture();
+              @Override public int onStartCommand(Intent intent, int flags, int startId) {
+                  if (intent != null && proj == null) {
+                      MediaProjectionManager m = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+                      proj = m.getMediaProjection(intent.getIntExtra("code", 0), intent.getParcelableExtra("data"));
+                      startScan();
                   }
                   return START_NOT_STICKY;
               }
 
-              private void startScreenCapture() {
+              private void startScan() {
                   DisplayMetrics dm = getResources().getDisplayMetrics();
-                  int capW = dm.widthPixels / 2;
-                  int capH = dm.heightPixels / 2;
+                  int w = dm.widthPixels / 2; int hH = dm.heightPixels / 2;
+                  reader = ImageReader.newInstance(w, hH, PixelFormat.RGBA_8888, 2);
+                  vd = proj.createVirtualDisplay("c_cap", w, hH, dm.densityDpi / 2, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, reader.getSurface(), null, null);
 
-                  imgReader = ImageReader.newInstance(capW, capH, PixelFormat.RGBA_8888, 2);
-                  vDisplay = projection.createVirtualDisplay("CyborgCap", capW, capH, dm.densityDpi / 2,
-                          DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, imgReader.getSurface(), null, null);
-
-                  scanHandler = new Handler(Looper.getMainLooper());
-                  scanRunnable = new Runnable() {
-                      @Override
-                      public void run() {
-                          processPixelFrame(capW, capH, dm.widthPixels, dm.heightPixels);
-                          scanHandler.postDelayed(this, 300);
+                  h = new Handler(Looper.getMainLooper());
+                  loop = new Runnable() {
+                      @Override public void run() {
+                          scan(w, hH, dm.widthPixels, dm.heightPixels);
+                          h.postDelayed(this, 300);
                       }
                   };
-                  scanHandler.postDelayed(scanRunnable, 600);
+                  h.postDelayed(loop, 500);
               }
 
-              private void processPixelFrame(int capW, int capH, int realW, int realH) {
-                  Image img = imgReader.acquireLatestImage();
+              private void scan(int w, int hH, int rw, int rh) {
+                  Image img = reader.acquireLatestImage();
                   if (img == null) return;
-
                   try {
-                      Image.Plane plane = img.getPlanes()[0];
-                      ByteBuffer buffer = plane.getBuffer();
-                      int pixelStride = plane.getPixelStride();
-                      int rowStride = plane.getRowStride();
+                      Image.Plane pl = img.getPlanes()[0];
+                      ByteBuffer buf = pl.getBuffer();
+                      int pS = pl.getPixelStride();
+                      int rS = pl.getRowStride();
+                      float sx = (float)w / rw; float sy = (float)hH / rh;
 
-                      float scaleX = (float) capW / realW;
-                      float scaleY = (float) capH / realH;
+                      int sxP = Math.max(0, (int)(boxParams.x * sx));
+                      int syP = Math.max(0, (int)(boxParams.y * sy));
+                      int exP = Math.min(w, sxP + (int)(boxParams.width * sx));
+                      int eyP = Math.min(hH, syP + (int)(boxParams.height * sy));
 
-                      int startX = Math.max(0, (int) (boxParams.x * scaleX));
-                      int startY = Math.max(0, (int) (boxParams.y * scaleY));
-                      int endX = Math.min(capW, startX + (int) (boxParams.width * scaleX));
-                      int endY = Math.min(capH, startY + (int) (boxParams.height * scaleY));
+                      int gC = 0, rC = 0;
+                      for (int y = syP; y < eyP; y += 3) {
+                          int row = y * rS;
+                          for (int x = sxP; x < exP; x += 3) {
+                              int o = row + (x * pS);
+                              int r = buf.get(o) & 0xFF;
+                              int g = buf.get(o+1) & 0xFF;
+                              int b = buf.get(o+2) & 0xFF;
+                              if (g > 110 && g > r * 1.25) gC++;
+                              else if (r > 120 && r > g * 1.3) rC++;
+                          }
+                      }
 
-                      int greenCount = 0, redCount = 0;
-                      int highestColoredY = endY, lowestColoredY = startY;
+                      long now = System.currentTimeMillis();
+                      if (gC > rC * 1.6 && gC > 20) {
+                          tvSig.setText("CALL (BUY)");
+                          tvSig.setTextColor(0xFF00FF88);
+                          if (now - lastAlert > 8000) { tone.startTone(ToneGenerator.TONE_PROP_BEEP, 200); vib.vibrate(150); lastAlert = now; }
+                      } else if (rC > gC * 1.6 && rC > 20) {
+                          tvSig.setText("PUT (SELL)");
+                          tvSig.setTextColor(0xFFFF3366);
+                          if (now - lastAlert > 8000) { tone.startTone(ToneGenerator.TONE_PROP_BEEP2, 300); vib.vibrate(250); lastAlert = now; }
+                      } else {
+                          tvSig.setText("MONITORING");
+                          tvSig.setTextColor(0xFF94A3B8);
+                      }
+                  } catch(Exception ignored) {} finally { img.close(); }
+              }
 
-                      for (int y = startY; y < endY; y += 2) {
-                          int rowOffset = y * rowStride;
-                          for (int x = startX; x < endX; x += 2) {
-                              int offset = rowOffset + (x * pixelStride);
-                         
+              @Override public void onDestroy() {
+                  super.onDestroy();
+                  if (h != null) h.removeCallbacks(loop);
+                  if (vd != null) vd.release();
+                  if (reader != null) reader.close();
+                  if (proj != null) proj.stop();
+                  if (targetBox != null) wm.removeView(targetBox);
+                  if (hud != null) wm.removeView(hud);
+              }
+          }
+          EOF
+
+      - name: Build Android APK
+        run: |
+          gradle assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cyborg-Sniper-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
