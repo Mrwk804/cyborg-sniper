@@ -8,26 +8,21 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #07090e; color: #e2e8f0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 12px; }
         .app-box { width: 100%; max-width: 440px; background: #0f131c; border: 1px solid #1e293b; border-radius: 20px; padding: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
-        
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 10px; margin-bottom: 12px; }
         .brand { font-size: 14px; font-weight: 900; color: #38bdf8; letter-spacing: 1px; }
         .status-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #1e293b; color: #94a3b8; }
         .status-badge.active { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
 
-        /* Camera / Video Viewport */
-        .preview-wrapper { position: relative; width: 100%; height: 210px; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
-        video { width: 100%; height: 100%; object-fit: contain; }
+        .preview-wrapper { position: relative; width: 100%; height: 230px; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
+        video { width: 100%; height: 100%; object-fit: cover; }
         canvas { display: none; }
 
-        /* Calibration Target Box */
-        .target-box { position: absolute; border: 2px dashed #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); pointer-events: none; }
+        .target-box { position: absolute; border: 2px dashed #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.5); pointer-events: none; }
         .target-label { position: absolute; top: -16px; left: 0; font-size: 9px; font-weight: 800; background: #f59e0b; color: #000; padding: 1px 4px; border-radius: 3px; }
 
-        /* Controls */
         .btn-vision { width: 100%; background: #2563eb; color: #fff; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
         .btn-vision.stop { background: #dc2626; }
 
-        /* Signal Display */
         .sig-panel { border-radius: 14px; padding: 14px; text-align: center; border: 2px solid #334155; background: #141a26; margin-bottom: 12px; transition: all 0.2s ease; }
         .sig-text { font-size: 34px; font-weight: 900; letter-spacing: 2px; }
         .sig-sub { font-size: 11px; font-weight: 700; margin-top: 2px; color: #94a3b8; }
@@ -36,18 +31,15 @@
         .PUT { border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.12); box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
         .WAIT { border-color: #334155; color: #94a3b8; }
 
-        /* Real-time Metrics Grid */
         .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
         .metric-cell { background: #161e2e; padding: 8px 6px; border-radius: 8px; border: 1px solid #1e293b; text-align: center; }
         .m-title { font-size: 9px; color: #64748b; font-weight: 700; text-transform: uppercase; }
         .m-val { font-size: 12px; font-weight: 800; color: #f8fafc; margin-top: 2px; }
 
-        /* Calibration Sliders */
         .calib-card { background: #111724; border: 1px solid #1e293b; border-radius: 10px; padding: 10px; margin-bottom: 12px; }
         .calib-title { font-size: 11px; font-weight: 800; color: #f59e0b; margin-bottom: 6px; display: flex; justify-content: space-between; }
         .slider-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 10px; margin-bottom: 4px; }
         input[type=range] { width: 70%; accent-color: #f59e0b; }
-
         .footer { font-size: 10px; color: #475569; text-align: center; }
     </style>
 </head>
@@ -59,29 +51,26 @@
         <div class="status-badge" id="engineStatus">STANDBY</div>
     </div>
 
-    <!-- Live Screen Stream Preview -->
-    <div class="preview-wrapper" id="previewWrap">
-        <video id="screenVideo" autoplay playsinline muted></video>
+    <div class="preview-wrapper">
+        <video id="cameraVideo" autoplay playsinline muted></video>
         <div class="target-box" id="targetBox">
             <span class="target-label">ACTIVE CANDLE SCANNER</span>
         </div>
         <div id="videoPlaceholder" style="font-size: 12px; color: #64748b; text-align: center; padding: 20px;">
-            Tap "Start Screen Vision" to capture Quotex / Pocket Option chart
+            Chart scan karne ke liye Camera Start karein
         </div>
     </div>
     <canvas id="procCanvas"></canvas>
 
-    <button class="btn-vision" id="btnToggle" onclick="toggleVision()">
-        ⚡ Start Screen Vision
+    <button class="btn-vision" id="btnToggle" onclick="toggleCamera()">
+        📷 Start Camera Vision
     </button>
 
-    <!-- Signal Alert Card -->
     <div class="sig-panel WAIT" id="sigPanel">
         <div class="sig-text" id="sigText">MONITORING</div>
-        <div class="sig-sub" id="sigSub">WAITING FOR SCREEN DATA FEED</div>
+        <div class="sig-sub" id="sigSub">WAITING FOR VIDEO FEED</div>
     </div>
 
-    <!-- Live Candle Pixel Metrics -->
     <div class="metrics-grid">
         <div class="metric-cell">
             <div class="m-title">GREEN PIXELS</div>
@@ -97,39 +86,35 @@
         </div>
     </div>
 
-    <!-- Scanner Calibration Box Settings -->
     <div class="calib-card">
         <div class="calib-title">
-            <span>ALIGN SCANNER WITH LIVE CANDLE</span>
+            <span>ALIGN SCANNER WITH CANDLE</span>
             <span id="calibStats">50%, 50%</span>
         </div>
         <div class="slider-row">
             <span>Horizontal (X)</span>
-            <input type="range" id="boxX" min="10" max="90" value="65" oninput="updateTargetBox()">
+            <input type="range" id="boxX" min="10" max="90" value="50" oninput="updateTargetBox()">
         </div>
         <div class="slider-row">
             <span>Vertical (Y)</span>
-            <input type="range" id="boxY" min="10" max="90" value="45" oninput="updateTargetBox()">
+            <input type="range" id="boxY" min="10" max="90" value="50" oninput="updateTargetBox()">
         </div>
         <div class="slider-row">
             <span>Box Size</span>
-            <input type="range" id="boxSize" min="30" max="140" value="70" oninput="updateTargetBox()">
+            <input type="range" id="boxSize" min="40" max="140" value="80" oninput="updateTargetBox()">
         </div>
     </div>
 
-    <div class="footer">
-        Real Pixel Processing • Browser Security Sandboxed
-    </div>
+    <div class="footer">Real Pixel Processing • Ultra Fast Engine</div>
 </div>
 
 <script>
     let stream = null;
     let scanInterval = null;
-    const video = document.getElementById('screenVideo');
+    const video = document.getElementById('cameraVideo');
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-    // Audio Engine
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function beep(freq, dur) {
         try {
@@ -147,23 +132,20 @@
         const x = document.getElementById('boxX').value;
         const y = document.getElementById('boxY').value;
         const size = document.getElementById('boxSize').value;
-        
         const box = document.getElementById('targetBox');
         box.style.width = size + 'px';
         box.style.height = size + 'px';
         box.style.left = `calc(${x}% - ${size/2}px)`;
         box.style.top = `calc(${y}% - ${size/2}px)`;
-
         document.getElementById('calibStats').innerText = `X:${x}% Y:${y}%`;
     }
     updateTargetBox();
 
-    async function toggleVision() {
+    async function toggleCamera() {
         if (!stream) {
             try {
-                // Request live screen capture from Android
-                stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { cursor: "always" },
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" },
                     audio: false
                 });
 
@@ -171,24 +153,21 @@
                 document.getElementById('videoPlaceholder').style.display = 'none';
                 document.getElementById('engineStatus').innerText = "SCANNING LIVE";
                 document.getElementById('engineStatus').className = "status-badge active";
-                
+
                 const btn = document.getElementById('btnToggle');
-                btn.innerText = "🛑 Stop Vision Scanner";
+                btn.innerText = "🛑 Stop Scanner";
                 btn.className = "btn-vision stop";
 
-                // Start Pixel Loop (every 400ms)
-                scanInterval = setInterval(processScreenFrame, 400);
-
-                stream.getVideoTracks()[0].onended = () => stopVision();
+                scanInterval = setInterval(processFrame, 350);
             } catch (err) {
-                alert("Screen share permission zaroori hai real chart dekhne ke liye!");
+                alert("Camera permission allow karein chart ko live scan karne ke liye!");
             }
         } else {
-            stopVision();
+            stopCamera();
         }
     }
 
-    function stopVision() {
+    function stopCamera() {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
             stream = null;
@@ -198,9 +177,9 @@
         document.getElementById('videoPlaceholder').style.display = 'block';
         document.getElementById('engineStatus').innerText = "STANDBY";
         document.getElementById('engineStatus').className = "status-badge";
-        
+
         const btn = document.getElementById('btnToggle');
-        btn.innerText = "⚡ Start Screen Vision";
+        btn.innerText = "📷 Start Camera Vision";
         btn.className = "btn-vision";
 
         document.getElementById('sigPanel').className = "sig-panel WAIT";
@@ -208,18 +187,17 @@
         document.getElementById('sigSub').innerText = "FEED STOPPED";
     }
 
-    function processScreenFrame() {
+    function processFrame() {
         if (!video.videoWidth || !video.videoHeight) return;
 
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Calculate Crop Area based on sliders
         const xPct = parseFloat(document.getElementById('boxX').value) / 100;
         const yPct = parseFloat(document.getElementById('boxY').value) / 100;
-        const scanWidth = 60;
-        const scanHeight = 80;
+        const scanWidth = 70;
+        const scanHeight = 90;
 
         const scanX = Math.floor((canvas.width * xPct) - (scanWidth / 2));
         const scanY = Math.floor((canvas.height * yPct) - (scanHeight / 2));
@@ -241,14 +219,11 @@
                 const g = data[idx + 1];
                 const b = data[idx + 2];
 
-                // Detect Green Candle pixels (Broker typical #22c55e / #00ff88)
-                if (g > 120 && g > r * 1.3 && g > b * 1.3) {
+                if (g > 110 && g > r * 1.25 && g > b * 1.25) {
                     greenCount++;
                     if (y < highestColoredY) highestColoredY = y;
                     if (y > lowestColoredY) lowestColoredY = y;
-                }
-                // Detect Red Candle pixels (Broker typical #ef4444 / #ff3344)
-                else if (r > 130 && r > g * 1.4 && r > b * 1.4) {
+                } else if (r > 120 && r > g * 1.3 && r > b * 1.3) {
                     redCount++;
                     if (y < highestColoredY) highestColoredY = y;
                     if (y > lowestColoredY) lowestColoredY = y;
@@ -261,33 +236,29 @@
 
         const totalCandlePixels = greenCount + redCount;
         const candleHeight = Math.max(1, lowestColoredY - highestColoredY);
-        const wickRatio = totalCandlePixels > 40 ? Math.min(85, Math.floor((candleHeight / scanHeight) * 100)) : 0;
+        const wickRatio = totalCandlePixels > 30 ? Math.min(90, Math.floor((candleHeight / scanHeight) * 100)) : 0;
         document.getElementById('wickRatio').innerText = wickRatio + "%";
 
         const sigPanel = document.getElementById('sigPanel');
         const sigText = document.getElementById('sigText');
         const sigSub = document.getElementById('sigSub');
 
-        // Logic on Real Screen Pixels:
-        // Agar Red pixels dominant hain aur upper wick banta nazar aye -> PUT
-        // Agar Green pixels dominant hain aur lower wick bounce bane -> CALL
-        if (redCount > greenCount * 1.6 && totalCandlePixels > 60) {
+        if (redCount > greenCount * 1.5 && totalCandlePixels > 50) {
             sigPanel.className = "sig-panel PUT";
             sigText.innerText = "PUT (SELL)";
-            sigSub.innerText = `RED ORDER FLOW DETECTED (${redCount} px) • WICK PRESSURE`;
-            beep(420, 200);
-        } else if (greenCount > redCount * 1.6 && totalCandlePixels > 60) {
+            sigSub.innerText = `BEARISH ABSORPTION (${redCount} px) • WICK PRESSURE`;
+            beep(440, 180);
+        } else if (greenCount > redCount * 1.5 && totalCandlePixels > 50) {
             sigPanel.className = "sig-panel CALL";
             sigText.innerText = "CALL (BUY)";
-            sigSub.innerText = `GREEN ORDER FLOW DETECTED (${greenCount} px) • BUY BOUNCE`;
-            beep(880, 200);
+            sigSub.innerText = `BULLISH BOUNCE (${greenCount} px) • BUY PRESSURE`;
+            beep(880, 180);
         } else {
             sigPanel.className = "sig-panel WAIT";
             sigText.innerText = "WAIT";
-            sigSub.innerText = "NO EXTREME ABSORPTION • MARKET BALANCED";
+            sigSub.innerText = "BALANCED CANDLE ACTION";
         }
     }
 </script>
-
 </body>
 </html>
